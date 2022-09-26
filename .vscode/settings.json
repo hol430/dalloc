@@ -1,0 +1,7 @@
+{
+	"files.associations": {
+		"dalloc_utils.h": "c",
+		"vector": "c"
+	},
+	"cmake.buildDirectory": "${workspaceFolder}/bin"
+}

@@ -1,0 +1,59 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "shell",
+			"label": "clean",
+			"command": "rm",
+			"args": [
+				"-rf",
+				"bin"
+			],
+			"options": {
+				"cwd": "${workspaceRoot}"
+			},
+			"detail": "Clean bin directory",
+			"problemMatcher": []
+		},
+		{
+			"type": "shell",
+			"label": "configure",
+			"command": "cmake",
+			"args": [
+				"-B",
+				"bin"
+			],
+			"options": {
+				"cwd": "${workspaceRoot}",
+				"env": {
+					"CMAKE_BUILD_TYPE": "Debug"
+				}
+			},
+			"dependsOn": [
+				"clean"
+			],
+			"detail": "Produce native makefiles"
+		},
+		{
+			"type": "shell",
+			"label": "build",
+			"command": "cmake",
+			"args": [
+				"--build",
+				"bin"
+			],
+			"options": {
+				"cwd": "${workspaceRoot}"
+			},
+			"problemMatcher": [],
+			"dependsOn": [
+				"configure"
+			],
+			"detail": "Build everything",
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			}
+		}
+	]
+}
