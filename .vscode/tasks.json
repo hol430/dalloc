@@ -40,7 +40,8 @@
 			"command": "cmake",
 			"args": [
 				"--build",
-				"bin"
+				"bin",
+				"-j`nproc`"
 			],
 			"options": {
 				"cwd": "${workspaceRoot}"
