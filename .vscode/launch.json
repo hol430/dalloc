@@ -10,6 +10,9 @@
 			"request": "launch",
 			"target": "./bin/unittests",
 			"cwd": "${workspaceRoot}",
+			"env": {
+				"CK_FORK": "no"
+			},
 			"valuesFormatting": "parseText",
 			"preLaunchTask": "build"
 		}

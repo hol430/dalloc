@@ -5,17 +5,18 @@
 #include <stdint.h>
 
 #include "test_malloc.h"
+#include "test_free.h"
 
 Suite** build_test_suite(int* num_suites) {
-    *num_suites = 1;
+    *num_suites = 2;
     Suite** test_suites = (Suite**)malloc(*num_suites * sizeof(Suite*));
-    test_suites[0] = malloc_test_suite();
+    test_suites[0] = d_malloc_test_suite();
+    test_suites[1] = d_free_test_suite();
 
     return test_suites;
 }
 
 int main(int argc, char** argv) {
-    fprintf(stdout, "test\n");
     int num_suites;
     Suite** all_suites = build_test_suite(&num_suites);
     int num_failures = 0;

@@ -9,6 +9,9 @@ target_sources("${dalloc}"
 		dalloc_utils.h
 		dalloc_utils.c
 		dalloc_internal.c
+		dalloc_io.h
+		dalloc_io.c
+		chunk.h
 	PUBLIC
 		dalloc_internal.h
 )
@@ -18,3 +21,7 @@ target_include_directories("${dalloc}"
 	PUBLIC
 		${CMAKE_CURRENT_LIST_DIR}
 )
+
+target_compile_options("${dalloc}"
+	PRIVATE
+		-Wall -Werror -pedantic -Wno-pointer-arith)
