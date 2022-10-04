@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <math.h>
+#include <unistd.h>
 
 #include "dalloc_io.h"
 #include "dalloc_internal.h"
@@ -25,7 +26,8 @@ END_TEST
 START_TEST(allocate_2n) {
     unsigned char *ptr = d_malloc(pow(2, _i));
 
-    // Attempt to write to this memory.
+    // Attempt to write to this memory. Granted this isn't a great way
+    // to check if it's actually writable...
     for (size_t i = 0; i < _i; i++) {
         ptr[i] = 0;
     }
@@ -49,7 +51,59 @@ START_TEST(allocate) {
 END_TEST
 
 START_TEST(sbrk_failure) {
-    // Need to ensure correctness when sbrk fails (ie it returns -1).
+    // todo
+    // need to ensure correctness when sbrk fails (ie it returns -1).
+}
+END_TEST
+
+START_TEST(allocate_n_times) {
+    // Allocate twice. Ensure that memory is acquired from the OS both
+    // times.
+    size_t size = 64;
+
+    // Get current position of program break.
+    void *pbrk0 = sbrk(0);
+
+    void *allocations[_i];
+    for (int32_t i = 0; i < _i; i++) {
+        allocations[i] = d_malloc(size);
+        void *pbrki = sbrk(0);
+        ck_assert((uintptr_t)pbrki >= (uintptr_t)pbrk0 + (i + 1) * size);
+    }
+
+    for (int32_t i = 0; i < _i; i++) {
+        d_free(allocations[i]);
+    }
+    void *pbrk_end = sbrk(0);
+    ck_assert_ptr_eq(pbrk_end, pbrk0);
+}
+END_TEST
+
+START_TEST(test_prefer_reuse) {
+	// Ensure that an unused chunk will be reused if possible, rather
+	// than allocating more memory.
+
+	// First allocate two chunks, then free the first. The first one
+	// can't be released to the OS at this time. Then allocate another
+	// chunk of the same size or smaller, and we should get the first
+	// chunk back (and no additional memory should be requested from
+	// the OS).
+	size_t size = 8;
+	void *ptr0 = d_malloc(size);
+	void *ptr1 = d_malloc(16);
+
+	// Won't be released to the OS.
+	void *pbrk0 = sbrk(0);
+	d_free(ptr0);
+
+	for (size_t s = 0; s < size; s++) {
+		void *ptr2 = d_malloc(size);
+		ck_assert_ptr_eq(ptr0, ptr2);
+		ck_assert_ptr_eq(pbrk0, sbrk(0));
+		d_free(ptr2);
+	}
+
+    d_free(ptr1);
 }
 END_TEST
 
@@ -63,6 +117,8 @@ Suite *d_malloc_test_suite() {
     tcase_add_loop_test(test_case, allocate, 1, 8);
     tcase_add_loop_test(test_case, allocate_2n, 4, 16);
     tcase_add_test(test_case, allocate_zero);
+    tcase_add_test(test_case, test_prefer_reuse);
+    tcase_add_loop_test(test_case, allocate_n_times, 1, 10);
     tcase_add_checked_fixture(test_case, malloc_tests_setup, malloc_tests_teardown);
 
     suite_add_tcase(suite, test_case);

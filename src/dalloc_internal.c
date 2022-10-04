@@ -12,9 +12,9 @@
 typedef struct {
 	chunk_t *start;
 	chunk_t *tail;
-} state_t;
+} heap_t;
 
-state_t heap;
+heap_t heap;
 
 void *d_malloc(size_t size) {
 	if (size == 0) {

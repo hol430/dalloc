@@ -79,7 +79,7 @@ START_TEST(test_greedy_free) {
 	// Free the second chunk. At this point, the program break should
 	// be as it was before any allocations occurred.
 	d_free(ptr1);
-	void *pbrk2 = sbrk(1);
+	void *pbrk2 = sbrk(0);
 	ck_assert_ptr_eq(pbrk_initial, pbrk2);
 }
 END_TEST
