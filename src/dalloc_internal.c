@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -6,6 +7,7 @@
 #include "dalloc_internal.h"
 #include "dalloc_io.h"
 #include "dalloc_utils.h"
+#include "dalloc_config.h"
 
 typedef struct {
 	chunk_t *start;
@@ -18,6 +20,13 @@ void *d_malloc(size_t size) {
 	if (size == 0) {
 		// As mandated by the spec.
 		return (void *)0;
+	}
+
+	// Attempt to find an unused chunk on the hepa.
+	chunk_t *found = find_unused_chunk_first(heap.start, size);
+	if (found) {
+		found->in_use = true;
+		return found->start;
 	}
 
 	// The amount of storage required for the chunk + metadata.
@@ -34,15 +43,16 @@ void *d_malloc(size_t size) {
 	chunk_t *chunk = (chunk_t*)allocated;
 	chunk->start = allocated + sizeof(chunk_t);
 	chunk->size = size;
-	chunk->next = NULL;
+	chunk->in_use = true;
 
 	if (!heap.start) {
 		// This is the first block of memory allocated by this process.
 		heap.start = chunk;
 		heap.tail = chunk;
+		chunk->iter = 0;
 	} else {
 		// Put this chunk on the end of the list.
-		heap.tail->next = chunk;
+		append(prev(heap.tail, NULL), heap.tail, chunk);
 		heap.tail = chunk;
 	}
 
@@ -53,32 +63,29 @@ void *d_malloc(size_t size) {
 void d_free(void *ptr) {
 	if (!heap.start) {
 		// User error. Undefined behaviour.
-		panic("Attempted to free memory without first allocating\n");
+		panic("Attempted to free memory without first allocating");
 	}
 
-	chunk_t *prev = NULL;
-	chunk_t *chunk = find_chunk(heap.start, ptr, &prev);
+	chunk_t *prv = NULL;
+	chunk_t *chunk = find_chunk(heap.start, ptr, &prv);
 	if (!chunk) {
 		// User error. Either a double-free or just passing in garbage.
-		// Either way, undefined behaviour is allowed.
-		panic("Invalid free()\n");
+		// Either way, undefined behaviour is allowed by the spec.
+		panic("free() error: invalid pointer");
 	}
 
-	// tbi: coalesce nearby unused chunks.
+	chunk->in_use = false;
 
-	if (chunk == heap.tail) {
-		// The user has freed the chunk at the end of the list.
-		// Let's free it.
-		// todo: think about holding onto chunks...
+	// todo: coalesce nearby unused chunks.
 
-		// First we will remove the chunk from the list.
-		if (!prev) {
-			// This is the only chunk in the list.
-			heap.start = NULL;
-			heap.tail = NULL;
+	while (heap.tail && !heap.tail->in_use) {
+		chunk_t *freed_chunk = heap.tail;
+		if (heap.tail == heap.start) {
+			heap.tail = heap.start = NULL;
 		} else {
-			prev->next = NULL;
-			heap.tail = prev;
+			chunk_t *previous = prev(heap.tail, NULL);
+			remove_after(previous, freed_chunk);
+			heap.tail = previous;
 		}
 
 		// The amount of space occupied by this chunk and its metadata.
@@ -98,8 +105,22 @@ void d_free(void *ptr) {
 }
 
 void *d_calloc(size_t nmemb, size_t size) {
-	panic("d_calloc tbi");
-	return NULL;
+	size_t total = nmemb * size;
+	if (total / nmemb != size) {
+		// Integer overflow.
+		log_warning("Allocating %d elements of size %d results in integer overflow", nmemb, size);
+		return NULL;
+	}
+	void *ptr = d_malloc(total);
+
+	if (!ptr) { 
+		return NULL;
+	}
+
+	for (void *ptr_i = ptr; ptr_i < ptr + total; ptr_i++) {
+		ptr_i = 0;
+	}
+	return ptr;
 }
 
 void *d_realloc(void *ptr, size_t size) {

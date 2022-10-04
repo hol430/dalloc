@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include <time.h>
 
+#include "dalloc_config.h"
 #include "dalloc_io.h"
 
 #define write_log(lvl, fmt) { \
@@ -169,7 +170,10 @@ void log_debug(char* fmt, ...) {
 
 void panic(char *fmt, ...) {
 	write_log(DALLOC_LOG_LEVEL_ERROR, fmt);
-	raise(SIGILL);
+
+	if (!robust_mode()) {
+		raise(SIGILL);
+	}
 }
 
 void set_log_level(int log_level) {

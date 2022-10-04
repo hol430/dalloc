@@ -1,5 +1,5 @@
 
-configure_file(dalloc_config.h.in dalloc_config.h)
+configure_file(dalloc_config.h dalloc_config.h)
 
 # Add source files here.
 target_sources("${dalloc}"
@@ -8,10 +8,15 @@ target_sources("${dalloc}"
 		dalloc.c
 		dalloc_utils.h
 		dalloc_utils.c
+		dalloc_heap_traversal.h
+		dalloc_heap_traversal.c
 		dalloc_internal.c
 		dalloc_io.h
 		dalloc_io.c
 		chunk.h
+		chunk.c
+		dalloc_config.h
+		dalloc_config.c
 	PUBLIC
 		dalloc_internal.h
 )

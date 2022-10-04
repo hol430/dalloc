@@ -7,6 +7,10 @@ target_sources("${test}"
 		test_malloc.h
 		test_free.c
 		test_free.h
+		test_heap_traversal.c
+		test_heap_traversal.h
+		test_heap_manip.c
+		test_heap_manip.h
 )
 
 # Include paths

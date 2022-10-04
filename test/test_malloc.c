@@ -48,6 +48,11 @@ START_TEST(allocate) {
 }
 END_TEST
 
+START_TEST(sbrk_failure) {
+    // Need to ensure correctness when sbrk fails (ie it returns -1).
+}
+END_TEST
+
 Suite *d_malloc_test_suite() {
 	Suite* suite;
     TCase* test_case;
