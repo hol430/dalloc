@@ -6,8 +6,8 @@
 #include <stdio.h>
 #include <unistd.h>
 
+#include "dalloc.h"
 #include "dalloc_io.h"
-#include "dalloc_internal.h"
 #include "test_free.h"
 
 void free_tests_setup() {

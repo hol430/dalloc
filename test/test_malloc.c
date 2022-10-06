@@ -7,7 +7,7 @@
 #include <unistd.h>
 
 #include "dalloc_io.h"
-#include "dalloc_internal.h"
+#include "dalloc.h"
 
 void malloc_tests_setup() {
 	set_log_level(DALLOC_LOG_LEVEL_NONE);

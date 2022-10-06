@@ -10,15 +10,12 @@ target_sources("${dalloc}"
 		dalloc_utils.c
 		dalloc_heap_traversal.h
 		dalloc_heap_traversal.c
-		dalloc_internal.c
 		dalloc_io.h
 		dalloc_io.c
 		chunk.h
 		chunk.c
 		dalloc_config.h
 		dalloc_config.c
-	PUBLIC
-		dalloc_internal.h
 )
 
 # Include directories
