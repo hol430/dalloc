@@ -56,7 +56,29 @@ START_TEST(sbrk_failure) {
 }
 END_TEST
 
-START_TEST(allocate_n_times) {
+START_TEST(test_malloc_no_chunk_exists) {
+    // Ensure that memory is acquired from the OS when no other chunks
+    // exist in the heap.
+    void *pbrk0 = sbrk(0);
+    size_t request_size = 16;
+    unsigned char *allocated = d_malloc(request_size);
+    void *pbrk1 = sbrk(0);
+
+    // Make sure that enough memory has been allocated.
+    ck_assert((uintptr_t)pbrk1 >= (uintptr_t)pbrk0 + request_size);
+
+    // Let's try to write to this memory. It's not a great test, but
+    // what can you do...
+    for (size_t i = 0; i < request_size; i++) {
+        allocated[i] = 0;
+    }
+
+    // Release the memory.
+    d_free(allocated);
+}
+END_TEST
+
+START_TEST(test_malloc_used_chunk_exists) {
     // Allocate twice. Ensure that memory is acquired from the OS both
     // times.
     size_t size = 64;
@@ -79,7 +101,7 @@ START_TEST(allocate_n_times) {
 }
 END_TEST
 
-START_TEST(test_prefer_reuse) {
+START_TEST(test_malloc_unused_chunk_exists) {
 	// Ensure that an unused chunk will be reused if possible, rather
 	// than allocating more memory.
 
@@ -117,8 +139,9 @@ Suite *d_malloc_test_suite() {
     tcase_add_loop_test(test_case, allocate, 1, 8);
     tcase_add_loop_test(test_case, allocate_2n, 4, 16);
     tcase_add_test(test_case, allocate_zero);
-    tcase_add_test(test_case, test_prefer_reuse);
-    tcase_add_loop_test(test_case, allocate_n_times, 1, 10);
+    tcase_add_test(test_case, test_malloc_no_chunk_exists);
+    tcase_add_test(test_case, test_malloc_unused_chunk_exists);
+    tcase_add_loop_test(test_case, test_malloc_used_chunk_exists, 1, 10);
     tcase_add_checked_fixture(test_case, malloc_tests_setup, malloc_tests_teardown);
 
     suite_add_tcase(suite, test_case);

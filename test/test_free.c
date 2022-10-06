@@ -18,9 +18,6 @@ void free_tests_teardown() {
 	
 }
 
-void allocate_and_free(size_t size) {
-}
-
 START_TEST(ensure_single_chunk_is_released) {
 	// Allocate a single chunk, then free it. Ensure that this memory is
 	// released to the OS. NOTE: This behaviour is debatable but this is
@@ -48,9 +45,21 @@ START_TEST(ensure_single_chunk_is_released) {
 }
 END_TEST
 
-START_TEST(free_without_allocating) {
-	// This should crash; that expectation is encapsulated in adding
-	// this test into the test case.
+START_TEST(test_free_dodgy_ptr_without_allocating) {
+	// Attempt to free a dodgy pointer (ie anything except something
+	// returned from d_malloc()), without first allocating something.
+	// This should cause a crash.
+	int x;
+	d_free(&x);
+}
+END_TEST
+
+START_TEST(test_free_dodgy_ptr_after_allocating) {
+	// Attempt to free a dodgy pointer (ie anything except something
+	// returned from d_malloc()), after first allocating something.
+	// This should cause a crash.
+	void *ptr = d_malloc(32);
+
 	int x;
 	d_free(&x);
 }
@@ -90,12 +99,16 @@ Suite *d_free_test_suite() {
 
     suite = suite_create("free tests");
     test_case = tcase_create("d_free test case");
+    tcase_add_checked_fixture(test_case, free_tests_setup, free_tests_teardown);
 
     tcase_add_loop_test(test_case, ensure_single_chunk_is_released, 1, 32);
-    tcase_add_checked_fixture(test_case, free_tests_setup, free_tests_teardown);
 	tcase_add_test(test_case, test_greedy_free);
-#if CK_FORK != no
-	tcase_add_test_raise_signal(test_case, free_without_allocating, SIGILL);
+#if !defined(CK_FORK) || CK_FORK == yes
+	// These tests should cause program termination, so if we run them
+	// when CK_FORK is disabled, they will prevent the other tests from
+	// being run (as they will cause the program to terminate).
+	tcase_add_test_raise_signal(test_case, test_free_dodgy_ptr_without_allocating, SIGILL);
+	tcase_add_test_raise_signal(test_case, test_free_dodgy_ptr_after_allocating, SIGILL);
 #endif
     suite_add_tcase(suite, test_case);
     return suite;

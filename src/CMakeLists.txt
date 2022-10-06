@@ -28,5 +28,13 @@ target_include_directories("${dalloc}"
 )
 
 target_compile_options("${dalloc}"
+	PUBLIC
+		--coverage
 	PRIVATE
 		-Wall -Werror -pedantic -Wno-pointer-arith)
+
+target_link_options(
+	"${dalloc}"
+	PUBLIC
+		--coverage
+)

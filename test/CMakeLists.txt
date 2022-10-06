@@ -20,6 +20,12 @@ target_include_directories(
 		../src
 )
 
+target_compile_options(
+	"${test}"
+	PUBLIC
+		--coverage
+)
+
 # Linked libraries
 find_library(CHECK check)
 target_link_libraries(
