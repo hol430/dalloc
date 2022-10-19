@@ -15,18 +15,6 @@ set_target_properties("${test}" PROPERTIES OUTPUT_NAME unittests)
 
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake-modules)
 if(CMAKE_COMPILER_IS_GNUCXX)
-    # include(CodeCoverage)
-    # setup_target_for_coverage_lcov(
-    # 	NAME "coverage"								# New target name
-    # 	EXECUTABLE ${PROJECT_BINARY_DIR}/unittests	# Executable in PROJECT_BINARY_DIR
-    # 	DEPENDENCIES "${test}"						# Dependencies to build first
-    # 	BASE_DIRECTORY "${PROJECT_SOURCE_DIR}"		# Base directory for report
-    # 												#  (defaults to PROJECT_SOURCE_DIR)
-    # 	EXCLUDE "${PROJECT_SOURCE_DIR}/test/*"		# Patterns to exclude (can be relative
-    # 												#  to BASE_DIRECTORY, with CMake 3.4+)
-    # 	#NO_DEMANGLE								# Don't demangle C++ symbols
-	# 	#											#  even if c++filt is found
-	# )
 	set(COVERAGE_DIR coverage)
 	set(COVERAGE_TARGET_NAME coverage)
 	add_custom_target(${COVERAGE_TARGET_NAME}
