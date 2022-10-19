@@ -59,7 +59,7 @@ more than n digits).
 @param n: The desired number of digits in the string.
 @param buf: The output buffer. Must be of size > n.
 */
-int pad(uint32_t x, uint16_t n, char* buf) {
+int pad(uint32_t x, uint16_t n, char *buf) {
 	uint16_t digits = (uint16_t)floor(log10(x) + 1);
 	if (digits > n) {
 		return 1;
@@ -108,7 +108,7 @@ void get_timestamp(char buf[TIMESTAMP_LEN]) {
 	buf[TIMESTAMP_LEN - 1] = 0;
 }
 
-void vlog_message(int log_level, char* fmt, va_list args) {
+void vlog_message(int log_level, char *fmt, va_list args) {
 	if (log_level > user_log_level) {
 		return;
 	}
@@ -139,32 +139,31 @@ void vlog_message(int log_level, char* fmt, va_list args) {
 	char full_format[message_length];
 	sprintf(full_format, "dalloc %s %s: %s\n", timestamp, msg_type, fmt);
 
-	FILE* out = log_level == DALLOC_LOG_LEVEL_ERROR ? stderr : stdout;
+	FILE *out = log_level == DALLOC_LOG_LEVEL_ERROR ? stderr : stdout;
 	vfprintf(out, full_format, args);
 }
 
-void log_message(int log_level, char* fmt, ...) {
+void log_message(int log_level, char *fmt, ...) {
 	write_log(log_level, fmt);
 }
 
-void log_error(char* fmt, ...) {
+void log_error(char *fmt, ...) {
 	write_log(DALLOC_LOG_LEVEL_ERROR, fmt);
 }
 
-void log_warning(char* fmt, ...) {
+void log_warning(char *fmt, ...) {
 	write_log(DALLOC_LOG_LEVEL_WARNING, fmt);
 }
 
-void log_info(char* fmt, ...) {
+void log_info(char *fmt, ...) {
 	write_log(DALLOC_LOG_LEVEL_INFO, fmt);
-
 }
 
-void log_diag(char* fmt, ...) {
+void log_diag(char *fmt, ...) {
 	write_log(DALLOC_LOG_LEVEL_DIAGNOSTIC, fmt);
 }
 
-void log_debug(char* fmt, ...) {
+void log_debug(char *fmt, ...) {
 	write_log(DALLOC_LOG_LEVEL_DEBUG, fmt);
 }
 

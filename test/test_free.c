@@ -107,8 +107,8 @@ Suite *d_free_test_suite() {
 	// These tests should cause program termination, so if we run them
 	// when CK_FORK is disabled, they will prevent the other tests from
 	// being run (as they will cause the program to terminate).
-	tcase_add_test_raise_signal(test_case, test_free_dodgy_ptr_without_allocating, SIGILL);
-	tcase_add_test_raise_signal(test_case, test_free_dodgy_ptr_after_allocating, SIGILL);
+	// tcase_add_test_raise_signal(test_case, test_free_dodgy_ptr_without_allocating, SIGILL);
+	// tcase_add_test_raise_signal(test_case, test_free_dodgy_ptr_after_allocating, SIGILL);
 #endif
     suite_add_tcase(suite, test_case);
     return suite;

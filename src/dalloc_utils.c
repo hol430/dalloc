@@ -51,8 +51,8 @@ int32_t chunk_size_difference(const chunk_t *chunk, void *user_data) {
 }
 
 chunk_t *find_unused_chunk_bestfit(chunk_t *start, size_t size) {
-	chunk_t **prev = NULL;
-	return min(start, chunk_size_difference, &size, prev);
+	chunk_t *prev = NULL;
+	return min(start, chunk_size_difference, &size, &prev);
 }
 
 int32_t get_allocation(const chunk_t *chunk, void *user_data) {

@@ -11,6 +11,10 @@ target_sources("${test}"
 		test_heap_traversal.h
 		test_heap_manip.c
 		test_heap_manip.h
+		test_io.c
+		test_io.h
+		test_utils.c
+		test_utils.h
 )
 
 # Include paths

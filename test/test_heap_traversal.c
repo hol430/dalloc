@@ -7,10 +7,11 @@
 #include "chunk.h"
 #include "dalloc_heap_traversal.h"
 #include "test_heap_traversal.h"
-chunk_t first;
-chunk_t second;
-chunk_t third;
-chunk_t fourth;
+
+static chunk_t first;
+static chunk_t second;
+static chunk_t third;
+static chunk_t fourth;
 
 void heap_traversal_tests_setup() {
 	// ?todo?: auto configure N chunks with size as function of index? e.g.
