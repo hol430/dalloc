@@ -13,6 +13,14 @@
 FILE *stdout_log;
 FILE *stderr_log;
 
+const char *messages[6] = { ""
+	, "ERROR"
+	, "WARNING"
+	, "INFO"
+	, "DIAGNOSTIC"
+	, "DEBUG"
+};
+
 void io_tests_setup() {
 	stdout_log = freopen(OUT_LOG_FILE_NAME, "w", stdout);
 	stderr_log = freopen(ERR_LOG_FILE_NAME, "w", stderr);
@@ -94,32 +102,85 @@ void assert_regex_match(const char *str, const char *pattern) {
 	regex_t regex;
 
 	// Compile the regular expression.
-	int32_t res = regcomp(&regex, pattern, 0);
+	int32_t res = regcomp(&regex, pattern, REG_NOSUB | REG_EXTENDED);
+
 	ck_assert_int_eq(0, res);
 
 	// Execute the regular expression.
-	res = regexec(&regex, str, 0, NULL, 0);
+	regmatch_t match;
+	res = regexec(&regex, str, 1, &match, 0);
 	ck_assert_int_eq(0, res);
 	regfree(&regex);
 }
 
-START_TEST(test_write_error) {
+START_TEST(test_log) {
+	// Write a message with the specified log level.
 	char *msg = "short error message";
+	log_message(_i, msg);
 
-	log_error(msg);
+	// Read stdout/stderr.
+	char *output = get_test_stdout();
+	char *error = get_test_stderr();
+
+	// Errors should be written to stderr.
+	// Everything else should go to stdout.
+	char *written = NULL;
+	if (_i == DALLOC_LOG_LEVEL_ERROR) {
+		ck_assert_int_eq(0, strlen(output));
+		ck_assert_int_ne(0, strlen(error));
+		written = error;
+	} else {
+		ck_assert_int_ne(0, strlen(output));
+		ck_assert_int_eq(0, strlen(error));
+		written = output;
+	}
+
+	// Use a regex to ensure the output looks as expected.
+	const char *msgType = messages[_i];
+	char *fmt = "dalloc .+ %s: %s\n";
+	char pattern[strlen(fmt) + strlen(msgType) + strlen(msg) - 3];
+	sprintf(pattern, fmt, msgType, msg);
+	assert_regex_match(written, pattern);
+
+	free(output);
+	free(error);
+}
+END_TEST
+
+START_TEST(ensure_log_verbosity_is_respected) {
+	const char *msg = "This is a log message.";
+
+	int log_level = _i / 5;
+	int message_verbosity = _i % 5 + 1;
+
+	set_log_level(log_level);
+	log_message(message_verbosity, msg);
 
 	char *output = get_test_stdout();
 	char *error = get_test_stderr();
 
-	ck_assert_int_eq(0, strlen(output));
-
-	char *fmt = "dalloc .* ERROR: %s";
-	char pattern[strlen(fmt) + strlen(msg) - 1];
-	sprintf(pattern, fmt, msg);
-	assert_regex_match(error, pattern);
+	int outlen = strlen(output);
+	int errlen = strlen(error);
 
 	free(output);
 	free(error);
+
+	int writtenLen = message_verbosity == DALLOC_LOG_LEVEL_ERROR
+		? errlen
+		: outlen;
+	int notWrittenLen = message_verbosity == DALLOC_LOG_LEVEL_ERROR
+		? outlen
+		: errlen;
+
+	// E.g. Write warning vs only logging errors
+	if (message_verbosity > log_level) {
+		// Message was not written.
+		ck_assert_int_eq(0, outlen);
+		ck_assert_int_eq(0, errlen);
+	} else {
+		ck_assert_int_ne(0, writtenLen);
+		ck_assert_int_eq(0, notWrittenLen);
+	}
 }
 END_TEST
 
@@ -127,12 +188,13 @@ Suite *d_io_test_suite() {
 	Suite* suite;
     TCase* test_case;
 
-    suite = suite_create("utils tests");
-    test_case = tcase_create("d_utils test case");
+    suite = suite_create("io tests");
+    test_case = tcase_create("d_io test case");
 	tcase_add_checked_fixture(test_case, io_tests_setup, io_tests_teardown);
     suite_add_tcase(suite, test_case);
 
-	tcase_add_test(test_case, test_write_error);
+	tcase_add_loop_test(test_case, test_log, 1, 6);
+	tcase_add_loop_test(test_case, ensure_log_verbosity_is_respected, 0, 30);
 
 	return suite;
 }
