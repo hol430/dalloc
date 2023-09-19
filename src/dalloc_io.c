@@ -69,7 +69,9 @@ int pad(uint32_t x, uint16_t n, char *buf) {
 		sprintf(buf, "%d", x);
 	} else {
 		uint16_t npad = n - digits;
-		char zeroes[npad];
+		// npad + 1 to allow for null terminator.
+		char zeroes[npad + 1];
+		zeroes[npad] = 0;
 		for (uint16_t i = 0; i < npad; i++) {
 			zeroes[i] = '0';
 		}
