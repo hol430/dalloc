@@ -19,47 +19,47 @@ Write a log message of the specified log level.
 @param log_level: Log level (error/warning/...).
 @param fmt: printf-style format string.
 */
-void log_message(int log_level, char* fmt, ...);
+void log_message(int log_level, const char* fmt, ...);
 
 /*
 Write an error message. This is a wrapper around log_message().
 
 @param fmt: printf-style format string.
 */
-void log_error(char* fmt, ...);
+void log_error(const char* fmt, ...);
 
 /*
 Write a warning message. This is a wrapper around log_message().
 
 @param fmt: printf-style format string.
 */
-void log_warning(char* fmt, ...);
+void log_warning(const char* fmt, ...);
 
 /*
 Write an info message. This is a wrapper around log_message().
 
 @param fmt: printf-style format string.
 */
-void log_info(char* fmt, ...);
+void log_info(const char* fmt, ...);
 
 /*
 Write a diagnostic message. This is a wrapper around log_message().
 
 @param fmt: printf-style format string.
 */
-void log_diag(char* fmt, ...);
+void log_diag(const char* fmt, ...);
 
 /*
 Write a debug message. This is a wrapper around log_message().
 
 @param fmt: printf-style format string.
 */
-void log_debug(char* fmt, ...);
+void log_debug(const char* fmt, ...);
 
 /*
 Write an error message and abort program execution. If this is being
 called, things are looking rather grim indeed.
 */
-void panic(char* fmt, ...);
+void panic(const char* fmt, ...);
 
 #endif // _DALLOC_IO_H_

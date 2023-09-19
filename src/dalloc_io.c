@@ -110,7 +110,7 @@ void get_timestamp(char buf[TIMESTAMP_LEN]) {
 	buf[TIMESTAMP_LEN - 1] = 0;
 }
 
-void vlog_message(int log_level, char *fmt, va_list args) {
+void vlog_message(int log_level, const char *fmt, va_list args) {
 	if (log_level > user_log_level) {
 		return;
 	}
@@ -145,31 +145,31 @@ void vlog_message(int log_level, char *fmt, va_list args) {
 	vfprintf(out, full_format, args);
 }
 
-void log_message(int log_level, char *fmt, ...) {
+void log_message(int log_level, const char *fmt, ...) {
 	write_log(log_level, fmt);
 }
 
-void log_error(char *fmt, ...) {
+void log_error(const char *fmt, ...) {
 	write_log(DALLOC_LOG_LEVEL_ERROR, fmt);
 }
 
-void log_warning(char *fmt, ...) {
+void log_warning(const char *fmt, ...) {
 	write_log(DALLOC_LOG_LEVEL_WARNING, fmt);
 }
 
-void log_info(char *fmt, ...) {
+void log_info(const char *fmt, ...) {
 	write_log(DALLOC_LOG_LEVEL_INFO, fmt);
 }
 
-void log_diag(char *fmt, ...) {
+void log_diag(const char *fmt, ...) {
 	write_log(DALLOC_LOG_LEVEL_DIAGNOSTIC, fmt);
 }
 
-void log_debug(char *fmt, ...) {
+void log_debug(const char *fmt, ...) {
 	write_log(DALLOC_LOG_LEVEL_DEBUG, fmt);
 }
 
-void panic(char *fmt, ...) {
+void panic(const char *fmt, ...) {
 	write_log(DALLOC_LOG_LEVEL_ERROR, fmt);
 
 	if (!robust_mode()) {
