@@ -89,7 +89,7 @@ void d_free(void *ptr) {
 		}
 
 		// The amount of space occupied by this chunk and its metadata.
-		size_t to_free = sizeof(chunk_t) + chunk->size;
+		size_t to_free = sizeof(chunk_t) + freed_chunk->size;
 
 		// Release the memory back to the OS.
 		void *res = sbrk(-to_free);
