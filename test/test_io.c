@@ -100,6 +100,7 @@ void assert_regex_match(const char *str, const char *pattern) {
 	// Execute the regular expression.
 	res = regexec(&regex, str, 0, NULL, 0);
 	ck_assert_int_eq(0, res);
+	regfree(&regex);
 }
 
 START_TEST(test_write_error) {
