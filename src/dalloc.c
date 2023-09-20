@@ -130,8 +130,9 @@ void *d_calloc(size_t nmemb, size_t size) {
 		return NULL;
 	}
 
-	for (void *ptr_i = ptr; ptr_i < ptr + total; ptr_i++) {
-		ptr_i = 0;
+	size_t nchar = total / sizeof(char);
+	for (size_t i = 0; i < nchar; i++) {
+		((char *)ptr)[i] = 0;
 	}
 	return ptr;
 }
