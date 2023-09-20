@@ -81,6 +81,11 @@ void d_free(void *ptr) {
 		return;
 	}
 
+	if (!chunk->in_use) {
+		panic("free(): double free or corrupted heap");
+		return;
+	}
+
 	chunk->in_use = false;
 
 	// todo: coalesce nearby unused chunks.

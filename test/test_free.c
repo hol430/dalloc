@@ -157,6 +157,24 @@ START_TEST(test_free_sbrk_failure) {
 }
 END_TEST
 
+START_TEST(test_free_unused_chunk) {
+	void *ptr0 = d_malloc(4);
+	void *ptr1 = d_malloc(4);
+	// ptr0 will not be released back to the OS, because there is an in-use
+	// chunk between it and the program break.
+	d_free(ptr0);
+
+	attach_signal_handler(SIGILL, _test_free_sigill_handler);
+	ck_assert_int_eq(false, _test_free_sigill_raised);
+	d_free(ptr0);
+	detach_signal_handlers(SIGILL);
+	ck_assert_int_eq(true, _test_free_sigill_raised);
+
+	// Now release the rest of the memory.
+	d_free(ptr1);
+}
+END_TEST
+
 Suite *d_free_test_suite() {
 	// Freed in srunner_free().
     TCase* test_case = tcase_create("d_free test case");
@@ -167,6 +185,7 @@ Suite *d_free_test_suite() {
     tcase_add_loop_test(test_case, ensure_single_chunk_is_released, 1, 32);
 	tcase_add_test(test_case, test_greedy_free);
 	tcase_add_test(test_case, test_free_sbrk_failure);
+	tcase_add_test(test_case, test_free_unused_chunk);
 
 	// Freed in srunner_free().
     Suite *suite = suite_create("free tests");
