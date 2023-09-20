@@ -15,6 +15,8 @@ target_sources("${test}"
 		test_io.h
 		test_utils.c
 		test_utils.h
+		test_util.c
+		test_util.h
 )
 
 # Include paths

@@ -1,5 +1,6 @@
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <unistd.h>
 
@@ -15,6 +16,10 @@ typedef struct {
 } heap_t;
 
 heap_t heap;
+
+void *_sbrk(intptr_t increment) {
+	return sbrk(increment);
+}
 
 void *d_malloc(size_t size) {
 	if (size == 0) {
@@ -32,7 +37,7 @@ void *d_malloc(size_t size) {
 	// The amount of storage required for the chunk + metadata.
 	size_t actual_size = size + sizeof(chunk_t);
 
-	void *allocated = sbrk(actual_size);
+	void *allocated = _sbrk(actual_size);
 	if (allocated == (void *)-1) {
 		// Allocation error. ERRNO is set by sbrk.
 		// Let the caller determine how this should be handled.
@@ -64,6 +69,7 @@ void d_free(void *ptr) {
 	if (!heap.start) {
 		// User error. Undefined behaviour.
 		panic("Attempted to free memory without first allocating");
+		return;
 	}
 
 	chunk_t *prv = NULL;
@@ -72,6 +78,7 @@ void d_free(void *ptr) {
 		// User error. Either a double-free or just passing in garbage.
 		// Either way, undefined behaviour is allowed by the spec.
 		panic("free() error: invalid pointer");
+		return;
 	}
 
 	chunk->in_use = false;
@@ -92,7 +99,7 @@ void d_free(void *ptr) {
 		size_t to_free = sizeof(chunk_t) + freed_chunk->size;
 
 		// Release the memory back to the OS.
-		void *res = sbrk(-to_free);
+		void *res = _sbrk(-to_free);
 
 		if (res == (void *)-1) {
 			// If this failed, it's probably a bug in our code.
@@ -100,6 +107,7 @@ void d_free(void *ptr) {
 			log_warning("Failed to free() memory. Likely a dalloc bug");
 			size_t alloc = total_allocated(heap.start);
 			log_diag("Attempted to free %d bytes. Total allocated = %d.", to_free, alloc);
+			panic("d_free(): heap corruption");
 		}
 	}
 }

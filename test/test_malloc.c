@@ -8,6 +8,7 @@
 
 #include "dalloc_io.h"
 #include "dalloc.h"
+#include "test_util.h"
 
 void malloc_tests_setup() {
 	set_log_level(DALLOC_LOG_LEVEL_NONE);
@@ -50,9 +51,18 @@ START_TEST(allocate) {
 }
 END_TEST
 
+void *custom_malloc_sbrk(intptr_t ptr) {
+    return (void *)-1;
+}
+
 START_TEST(sbrk_failure) {
     // todo
     // need to ensure correctness when sbrk fails (ie it returns -1).
+    attach_sbrk_handler(custom_malloc_sbrk);
+
+    
+
+    remove_sbrk_handlers();
 }
 END_TEST
 

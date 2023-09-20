@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <check.h>
 #include <signal.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -9,13 +10,27 @@
 #include "dalloc.h"
 #include "dalloc_io.h"
 #include "test_free.h"
+#include "test_util.h"
+
+bool _test_free_sigill_raised;
+
+void *custom_sbrk(intptr_t increment) {
+	sbrk(increment);
+	return (void *)-1;
+}
 
 void free_tests_setup() {
 	set_log_level(DALLOC_LOG_LEVEL_NONE);
+	_test_free_sigill_raised = false;
 }
 
 void free_tests_teardown() {
-	
+
+}
+
+void _test_free_sigill_handler(int signum) {
+	ck_assert_int_eq(SIGILL, signum);
+	_test_free_sigill_raised = true;
 }
 
 START_TEST(ensure_single_chunk_is_released) {
@@ -42,26 +57,6 @@ START_TEST(ensure_single_chunk_is_released) {
 	// Assertions.
 	ck_assert_ptr_ne(pbrk0, pbrk1);
 	ck_assert_ptr_eq(pbrk0, pbrk2);
-}
-END_TEST
-
-START_TEST(test_free_dodgy_ptr_without_allocating) {
-	// Attempt to free a dodgy pointer (ie anything except something
-	// returned from d_malloc()), without first allocating something.
-	// This should cause a crash.
-	int x;
-	d_free(&x);
-}
-END_TEST
-
-START_TEST(test_free_dodgy_ptr_after_allocating) {
-	// Attempt to free a dodgy pointer (ie anything except something
-	// returned from d_malloc()), after first allocating something.
-	// This should cause a crash.
-	void *ptr = d_malloc(32);
-
-	int x;
-	d_free(&x);
 }
 END_TEST
 
@@ -93,23 +88,88 @@ START_TEST(test_greedy_free) {
 }
 END_TEST
 
-Suite *d_free_test_suite() {
-	Suite* suite;
-    TCase* test_case;
+START_TEST(test_free_noalloc) {
+	// Attempt to free an invalid pointer without first allocating anything.
+	// This should result in a crash.
+	attach_signal_handler(SIGILL, _test_free_sigill_handler);
 
-    suite = suite_create("free tests");
-    test_case = tcase_create("d_free test case");
+	ck_assert_int_eq(false, _test_free_sigill_raised);
+	// This should fail on the basis that we haven't yet allocated anything.
+	int x;
+	d_free(&x);
+
+	ck_assert_int_eq(true, _test_free_sigill_raised);
+
+	detach_signal_handlers(SIGILL);
+}
+END_TEST
+
+START_TEST(test_free_invalid) {
+	// Attempt to free an invalid pointer after allocating something. This
+	// should result in a crash.
+	attach_signal_handler(SIGILL, _test_free_sigill_handler);
+
+	ck_assert_int_eq(false, _test_free_sigill_raised);
+
+	// Initialise the heap by allocating something.
+	void *p = d_malloc(32);
+
+	// This should fail on the basis that it's an invalid pointer.
+	int x;
+	d_free(&x);
+
+	ck_assert_int_eq(true, _test_free_sigill_raised);
+
+	detach_signal_handlers(SIGILL);
+
+	// Free the memory that we did actually allocate.
+	d_free(p);
+}
+END_TEST
+
+START_TEST(test_free_sbrk_failure) {
+	// Allocate something.
+	void *ptr = d_malloc(8);
+
+	// Now configure sbrk() to call our custom_sbrk function. This will proxy
+	// the request through to sbrk() (in order to preserve the integrity of the
+	// heap and actually free this memory), and return (void *)-1, indicating
+	// failure.
+	attach_sbrk_handler(custom_sbrk);
+
+	// Attempt to free an invalid pointer after allocating something. This
+	// should result in a crash.
+	attach_signal_handler(SIGILL, _test_free_sigill_handler);
+
+	ck_assert_int_eq(false, _test_free_sigill_raised);
+
+	// Attempt to free our allocated memory. This will fail, but the memory will
+	// actually be freed successfully.
+	d_free(ptr);
+
+	ck_assert_int_eq(true, _test_free_sigill_raised);
+
+	detach_signal_handlers(SIGILL);
+
+	// This failure should not cause a crash in client programs/libraries. A
+	// crash in this test should be considered a failure.
+	remove_sbrk_handlers();
+}
+END_TEST
+
+Suite *d_free_test_suite() {
+	// Freed in srunner_free().
+    TCase* test_case = tcase_create("d_free test case");
     tcase_add_checked_fixture(test_case, free_tests_setup, free_tests_teardown);
 
+	tcase_add_test(test_case, test_free_noalloc);
+	tcase_add_test(test_case, test_free_invalid);
     tcase_add_loop_test(test_case, ensure_single_chunk_is_released, 1, 32);
 	tcase_add_test(test_case, test_greedy_free);
-#if !defined(CK_FORK) || CK_FORK == yes
-	// These tests should cause program termination, so if we run them
-	// when CK_FORK is disabled, they will prevent the other tests from
-	// being run (as they will cause the program to terminate).
-	// tcase_add_test_raise_signal(test_case, test_free_dodgy_ptr_without_allocating, SIGILL);
-	// tcase_add_test_raise_signal(test_case, test_free_dodgy_ptr_after_allocating, SIGILL);
-#endif
+	tcase_add_test(test_case, test_free_sbrk_failure);
+
+	// Freed in srunner_free().
+    Suite *suite = suite_create("free tests");
     suite_add_tcase(suite, test_case);
     return suite;
 }

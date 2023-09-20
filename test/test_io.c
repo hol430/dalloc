@@ -1,11 +1,15 @@
+#include <stdbool.h>
 #include <check.h>
 #include <regex.h>
+#include <signal.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 #include "dalloc_io.h"
+#include "dalloc_io_internal.h"
 #include "test_io.h"
+#include "test_util.h"
 
 #define OUT_LOG_FILE_NAME "dalloc_test_io.log"
 #define ERR_LOG_FILE_NAME "dalloc_test_io.err"
@@ -13,12 +17,21 @@
 FILE *stdout_log;
 FILE *stderr_log;
 
-const char *messages[6] = { ""
+bool robust;
+bool sigill_raised = false;
+
+bool robust_mode() {
+	return robust;
+}
+
+#define NUM_MSG_TYPES 7
+const char *messages[NUM_MSG_TYPES] = { ""
 	, "ERROR"
 	, "WARNING"
 	, "INFO"
 	, "DIAGNOSTIC"
 	, "DEBUG"
+	, "UNKNOWN"
 };
 
 void io_tests_setup() {
@@ -29,6 +42,8 @@ void io_tests_setup() {
 	// Any test which relies on different behaviour will need to
 	// manually configure the log level.
 	set_log_level(DALLOC_LOG_LEVEL_DEBUG);
+	robust = true;
+	sigill_raised = false;
 }
 
 void io_tests_teardown() {
@@ -113,10 +128,8 @@ void assert_regex_match(const char *str, const char *pattern) {
 	regfree(&regex);
 }
 
-START_TEST(test_log) {
-	// Write a message with the specified log level.
-	char *msg = "short error message";
-	log_message(_i, msg);
+void validate_log_message(const char *msg, int log_level) {
+	ck_assert_int_lt(log_level, NUM_MSG_TYPES);
 
 	// Read stdout/stderr.
 	char *output = get_test_stdout();
@@ -125,18 +138,20 @@ START_TEST(test_log) {
 	// Errors should be written to stderr.
 	// Everything else should go to stdout.
 	char *written = NULL;
-	if (_i == DALLOC_LOG_LEVEL_ERROR) {
+	if (log_level == DALLOC_LOG_LEVEL_ERROR) {
+		// stdout should be empty, stderr should be nonempty.
 		ck_assert_int_eq(0, strlen(output));
 		ck_assert_int_ne(0, strlen(error));
 		written = error;
 	} else {
+		// stdout should be nonempty, stderr should be empty.
 		ck_assert_int_ne(0, strlen(output));
 		ck_assert_int_eq(0, strlen(error));
 		written = output;
 	}
 
 	// Use a regex to ensure the output looks as expected.
-	const char *msgType = messages[_i];
+	const char *msgType = messages[log_level];
 	char *fmt = "dalloc .+ %s: %s\n";
 	char pattern[strlen(fmt) + strlen(msgType) + strlen(msg) - 3];
 	sprintf(pattern, fmt, msgType, msg);
@@ -144,6 +159,35 @@ START_TEST(test_log) {
 
 	free(output);
 	free(error);
+}
+
+START_TEST(test_log) {
+	// Write a message with the specified log level.
+	char *msg = "short error message";
+	set_log_level(_i);
+	log_message(_i, msg);
+
+	validate_log_message(msg, _i);
+}
+END_TEST
+
+START_TEST(test_log_explicit) {
+	const char *msg = "hello";
+	if (_i == 1) {
+		log_error(msg);
+	} else if (_i == 2) {
+		log_warning(msg);
+	} else if (_i == 3) {
+		log_info(msg);
+	} else if (_i == 4) {
+		log_diag(msg);
+	} else if (_i == 5) {
+		log_debug(msg);
+	} else {
+		set_log_level(_i);
+		log_message(_i, msg);
+	}
+	validate_log_message(msg, _i);
 }
 END_TEST
 
@@ -184,6 +228,70 @@ START_TEST(ensure_log_verbosity_is_respected) {
 }
 END_TEST
 
+START_TEST(test_pad) {
+	uint32_t value = 34;
+	uint16_t num_digits = 5;
+	char *buf = malloc(sizeof(char) * (num_digits + 1));
+	buf[num_digits] = 0; // NULL terminator
+	int res = pad(value, num_digits, buf);
+	ck_assert_uint_eq(0, res);
+	ck_assert_str_eq("00034", buf);
+	free(buf);
+}
+END_TEST
+
+START_TEST(test_pad_large_number) {
+	// Attempt to pad out to N digits a number with >N digits.
+	uint32_t value = 1234;
+	char buf[7];
+	for (uint16_t num_digits = 0; num_digits < 4; num_digits++) {
+		uint32_t res = pad(value, num_digits, buf);
+		ck_assert_uint_eq(1, res);
+	}
+	buf[4] = 0;
+	uint32_t res = pad(value, 4, buf);
+	ck_assert_uint_eq(0, res);
+	ck_assert_str_eq("1234", buf);
+	buf[5] = 0;
+	res = pad(value, 5, buf);
+	ck_assert_uint_eq(0, res);
+	ck_assert_str_eq("01234", buf);
+}
+END_TEST
+
+void sigill_handler(int32_t signum) {
+	// Verify that the correct signal was raised.
+    ck_assert_int_eq(SIGILL, signum);
+	sigill_raised = true;
+}
+
+START_TEST(test_panic) {
+	const char *msg = "error message";
+	// Attach a custom handler for SIGILL, which will assert that the raised
+	// signal is SIGILL, and also set sigill_raised to true.
+	attach_signal_handler(SIGILL, sigill_handler);
+	ck_assert_int_eq(false, sigill_raised);
+
+	// We've mocked the robust_mode() function such that it relies on this var.
+	robust = true;
+
+	// Call panic() - this should not trigger a crash.
+	panic(msg);
+	ck_assert_int_eq(false, sigill_raised);
+
+	// Ensure that a log message was written though.
+	validate_log_message(msg, DALLOC_LOG_LEVEL_ERROR);
+
+	// Now set robust to false, and call panic(). This should raise SIGILL.
+	robust = false;
+	panic(msg);
+	ck_assert_int_eq(true, sigill_raised);
+
+	// Detach the signal handler.
+	detach_signal_handlers(SIGILL);
+}
+END_TEST
+
 Suite *d_io_test_suite() {
 	Suite* suite;
     TCase* test_case;
@@ -193,8 +301,12 @@ Suite *d_io_test_suite() {
 	tcase_add_checked_fixture(test_case, io_tests_setup, io_tests_teardown);
     suite_add_tcase(suite, test_case);
 
-	tcase_add_loop_test(test_case, test_log, 1, 6);
+	tcase_add_loop_test(test_case, test_log, 1, 7);
+	tcase_add_loop_test(test_case, test_log_explicit, 1, 7);
 	tcase_add_loop_test(test_case, ensure_log_verbosity_is_respected, 0, 30);
+	tcase_add_test(test_case, test_pad);
+	tcase_add_test(test_case, test_panic);
+	tcase_add_test(test_case, test_pad_large_number);
 
 	return suite;
 }
