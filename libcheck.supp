@@ -1,0 +1,48 @@
+{
+    suppress_suite_creation
+    Memcheck:Leak
+    match-leak-kinds: reachable
+    ...
+    fun:suite_create
+}
+
+{
+    suppress_test_case_creation
+    Memcheck:Leak
+    match-leak-kinds: reachable
+    ...
+    fun:tcase_create
+}
+
+{
+    suppress_runner_creation
+    Memcheck:Leak
+    match-leak-kinds: reachable
+    ...
+    fun:srunner_create
+}
+
+{
+    suppress_runner_creation
+    Memcheck:Leak
+    match-leak-kinds: reachable
+    ...
+    fun:srunner_run_tagged
+}
+
+{
+    suppress_tcase_add_test
+    Memcheck:Leak
+    match-leak-kinds: reachable
+    ...
+    fun:_tcase_add_test
+}
+
+
+{
+    suppress_test_suite_construction
+    Memcheck:Leak
+    match-leak-kinds: reachable
+    ...
+    fun:build_test_suite
+}
