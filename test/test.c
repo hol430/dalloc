@@ -10,18 +10,22 @@
 #include "test_io.h"
 #include "test_calloc.h"
 #include "test_malloc.h"
+#include "test_realloc.h"
+#include "test_reallocarray.h"
 #include "test_utils.h"
 
 Suite **build_test_suite(int *num_suites) {
-    *num_suites = 7;
+    *num_suites = 9;
     Suite **test_suites = (Suite **)malloc(*num_suites * sizeof(Suite *));
     test_suites[0] = d_calloc_test_suite();
     test_suites[1] = d_malloc_test_suite();
-    test_suites[2] = d_free_test_suite();
-    test_suites[3] = d_heap_manip_test_suite();
-    test_suites[4] = d_heap_traversal_test_suite();
-    test_suites[5] = d_utils_test_suite();
-    test_suites[6] = d_io_test_suite();
+    test_suites[2] = d_realloc_test_suite();
+    test_suites[3] = d_reallocarray_test_suite();
+    test_suites[4] = d_free_test_suite();
+    test_suites[5] = d_heap_manip_test_suite();
+    test_suites[6] = d_heap_traversal_test_suite();
+    test_suites[7] = d_utils_test_suite();
+    test_suites[8] = d_io_test_suite();
 
     return test_suites;
 }

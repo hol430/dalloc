@@ -1,3 +1,4 @@
+#include <check.h>
 #include <signal.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -40,4 +41,16 @@ void attach_sbrk_handler(_sbrk_handler_t handler) {
 
 void remove_sbrk_handlers() {
 	__dalloc_sbrk = NULL;
+}
+
+void assert_ptr_contents_equal(size_t size, void *ptr0, void *ptr1) {
+	for (size_t i = 0; i < size; i++) {
+		ck_assert_msg(((char *)ptr0)[i] == ((char *)ptr1)[i], "Memory contents are not equal");
+	}
+}
+
+void fill_memory(size_t size, void *ptr) {
+	for (size_t i = 0; i < size; i++) {
+		((char *)ptr)[i] = i % 0xff;
+	}
 }

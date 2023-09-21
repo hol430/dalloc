@@ -25,4 +25,21 @@ Remove all custom sbrk implementations.
 */
 void remove_sbrk_handlers();
 
+/*
+Assert that the first size bytes of ptr0 and ptr1 are equal.
+
+@param size: Number of bytes to check.
+@param ptr0: A pointer.
+@param ptr1: A pointer.
+*/
+void assert_ptr_contents_equal(size_t size, void *ptr0, void *ptr1);
+
+/*
+Fill the first size bytes of memory starting at ptr0 with non-random data.
+
+@param size: Number of bytes to write.
+@param ptr: The pointer.
+*/
+void fill_memory(size_t size, void *ptr);
+
 #endif // _DALLOC_TEST_UTIL_H_

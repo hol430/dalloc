@@ -3,10 +3,16 @@
 target_sources("${test}"
 	PRIVATE
 		test.c
+		test_calloc.c
+		test_calloc.h
 		test_malloc.c
 		test_malloc.h
 		test_free.c
 		test_free.h
+		test_realloc.c
+		test_realloc.h
+		test_reallocarray.c
+		test_reallocarray.h
 		test_heap_traversal.c
 		test_heap_traversal.h
 		test_heap_manip.c

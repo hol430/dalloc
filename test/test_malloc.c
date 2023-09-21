@@ -56,13 +56,10 @@ void *custom_malloc_sbrk(intptr_t ptr) {
 }
 
 START_TEST(sbrk_failure) {
-    // todo
-    // need to ensure correctness when sbrk fails (ie it returns -1).
     attach_sbrk_handler(custom_malloc_sbrk);
-
-    
-
+    void *ptr = d_malloc(8);
     remove_sbrk_handlers();
+    ck_assert_ptr_eq(NULL, ptr);
 }
 END_TEST
 
@@ -140,11 +137,8 @@ START_TEST(test_malloc_unused_chunk_exists) {
 END_TEST
 
 Suite *d_malloc_test_suite() {
-	Suite* suite;
-    TCase* test_case;
-
-    suite = suite_create("malloc Tests");
-    test_case = tcase_create("malloc Test Case");
+    TCase* test_case = tcase_create("malloc Test Case");
+    tcase_add_checked_fixture(test_case, malloc_tests_setup, malloc_tests_teardown);
 
     tcase_add_loop_test(test_case, allocate, 1, 8);
     tcase_add_loop_test(test_case, allocate_2n, 4, 16);
@@ -152,8 +146,9 @@ Suite *d_malloc_test_suite() {
     tcase_add_test(test_case, test_malloc_no_chunk_exists);
     tcase_add_test(test_case, test_malloc_unused_chunk_exists);
     tcase_add_loop_test(test_case, test_malloc_used_chunk_exists, 1, 10);
-    tcase_add_checked_fixture(test_case, malloc_tests_setup, malloc_tests_teardown);
+    tcase_add_test(test_case, sbrk_failure);
 
+	Suite* suite = suite_create("malloc Tests");
     suite_add_tcase(suite, test_case);
     return suite;
 }
