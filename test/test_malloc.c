@@ -1,9 +1,11 @@
-#include <stdio.h>
 #include <assert.h>
 #include <check.h>
-#include <stdlib.h>
-#include <stdint.h>
+#include <errno.h>
 #include <math.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/resource.h>
 #include <unistd.h>
 
 #include "dalloc_io.h"
@@ -136,6 +138,40 @@ START_TEST(test_malloc_unused_chunk_exists) {
 }
 END_TEST
 
+START_TEST(test_malloc_enomem) {
+    // Get current RLIMIT_DATA soft limit.
+    struct rlimit rlp;
+    int32_t err = getrlimit(RLIMIT_DATA, &rlp);
+    ck_assert_int_eq(0, err);
+    rlim_t rlim = rlp.rlim_cur;
+
+    // Set RLIMIT_DATA soft limit to a custom value.
+    size_t size = 1<<13;
+    if (rlim > size) {
+        rlp.rlim_cur = size;
+        err = setrlimit(RLIMIT_DATA, &rlp);
+        ck_assert_int_eq(0, err);
+    }
+
+    // Attempt to allocate memory than is now permitted.
+    void *ptr = d_malloc(size);
+    int32_t malloc_errno = errno;
+
+    // Reset RLIMIT_DATA soft limit to its previous value.
+    rlp.rlim_cur = rlim;
+    err = setrlimit(RLIMIT_DATA, &rlp);
+    if (err == -1) {
+        perror("test_malloc_enomem: setrlimit");
+        ck_assert_int_eq(0, err);
+    }
+
+    // Verify that d_malloc sets errno appropriately.
+    // (Actually we don't set it, we just preserve the value set by sbrk).
+    ck_assert_ptr_null(ptr);
+    ck_assert_int_eq(ENOMEM, malloc_errno);
+}
+END_TEST
+
 Suite *d_malloc_test_suite() {
     TCase* test_case = tcase_create("malloc Test Case");
     tcase_add_checked_fixture(test_case, malloc_tests_setup, malloc_tests_teardown);
@@ -147,6 +183,7 @@ Suite *d_malloc_test_suite() {
     tcase_add_test(test_case, test_malloc_unused_chunk_exists);
     tcase_add_loop_test(test_case, test_malloc_used_chunk_exists, 1, 10);
     tcase_add_test(test_case, sbrk_failure);
+    tcase_add_test(test_case, test_malloc_enomem);
 
 	Suite* suite = suite_create("malloc Tests");
     suite_add_tcase(suite, test_case);

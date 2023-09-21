@@ -66,6 +66,11 @@ void *d_malloc(size_t size) {
 }
 
 void d_free(void *ptr) {
+	if (!ptr) {
+		// If ptr is a null pointer, no action shall occur.
+		return;
+	}
+
 	if (!heap.start) {
 		// User error. Undefined behaviour.
 		panic("Attempted to free memory without first allocating");

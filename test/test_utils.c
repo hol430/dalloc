@@ -113,6 +113,10 @@ START_TEST(test_is_contiguous) {
 	void *ptr1 = d_malloc(16);
 	void *ptr2 = d_malloc(32);
 
+	ck_assert_ptr_nonnull(ptr0);
+	ck_assert_ptr_nonnull(ptr1);
+	ck_assert_ptr_nonnull(ptr2);
+
 	// This will break if we change the way that we use the allocated space.
 	chunk_t *ch0 = (chunk_t *)(ptr0 - sizeof(chunk_t));
 	chunk_t *ch1 = (chunk_t *)(ptr1 - sizeof(chunk_t));

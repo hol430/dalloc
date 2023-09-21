@@ -175,6 +175,12 @@ START_TEST(test_free_unused_chunk) {
 }
 END_TEST
 
+START_TEST(test_free_null) {
+	d_free(NULL);
+	// A crash will cause test failure. Any other behaviour is acceptable.
+}
+END_TEST
+
 Suite *d_free_test_suite() {
 	// Freed in srunner_free().
     TCase* test_case = tcase_create("d_free test case");
@@ -186,6 +192,7 @@ Suite *d_free_test_suite() {
 	tcase_add_test(test_case, test_greedy_free);
 	tcase_add_test(test_case, test_free_sbrk_failure);
 	tcase_add_test(test_case, test_free_unused_chunk);
+	tcase_add_test(test_case, test_free_null);
 
 	// Freed in srunner_free().
     Suite *suite = suite_create("free tests");

@@ -111,6 +111,7 @@ START_TEST(test_realloc_same_size) {
 	// Test reallocing to the same size. This should return the same pointer.
 	size_t size = 1 << _i;
 	void *ptr0 = d_malloc(size);
+	ck_assert_ptr_nonnull(ptr0);
 
 	// Populate the allocated memory.
 	fill_memory(size, ptr0);
@@ -139,15 +140,20 @@ START_TEST(test_realloc_smaller) {
 
 	// Perform (re/)allocation
 	void *ptr0 = d_malloc(size);
+	ck_assert_ptr_nonnull(ptr0);
 	fill_memory(size, ptr0);
 
-	void *ptr1 = d_realloc(ptr0, new_size);
+	void *ptr1 = d_malloc(size);
+	ck_assert_ptr_nonnull(ptr1);
+	fill_memory(size, ptr1);
+
+	void *ptr2 = d_realloc(ptr0, new_size);
 
 	// First, ensure that the returned pointer is the same as the original.
-	ck_assert_ptr_eq(ptr0, ptr1);
-	assert_ptr_contents_equal(new_size, ptr0, ptr1);
+	assert_ptr_contents_equal(new_size, ptr1, ptr2);
 
-	d_free(ptr0);
+	d_free(ptr1);
+	d_free(ptr2);
 }
 END_TEST
 
@@ -162,6 +168,7 @@ START_TEST(test_realloc_slightly_smaller) {
 
 	// Perform (re/)allocation
 	void *ptr0 = d_malloc(size);
+	ck_assert_ptr_nonnull(ptr0);
 	fill_memory(size, ptr0);
 	void *ptr1 = d_realloc(ptr0, new_size);
 

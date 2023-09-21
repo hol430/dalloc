@@ -14,7 +14,7 @@
 #include "test_reallocarray.h"
 #include "test_utils.h"
 
-Suite **build_test_suite(int *num_suites) {
+Suite **build_test_suite(size_t *num_suites) {
     *num_suites = 9;
     Suite **test_suites = (Suite **)malloc(*num_suites * sizeof(Suite *));
     test_suites[0] = d_calloc_test_suite();
@@ -31,10 +31,10 @@ Suite **build_test_suite(int *num_suites) {
 }
 
 int main(int argc, char **argv) {
-    int num_suites;
+    size_t num_suites;
     Suite **all_suites = build_test_suite(&num_suites);
     int num_failures = 0;
-    for (uint32_t i = 0; i < num_suites; i++) {
+    for (size_t i = 0; i < num_suites; i++) {
         Suite *suite = all_suites[i];
         SRunner *runner = srunner_create(suite);
         srunner_run_all(runner, CK_NORMAL);

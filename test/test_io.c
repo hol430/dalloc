@@ -1,3 +1,6 @@
+
+#define _POSIX_C_SOURCE 200809L
+
 #include <stdbool.h>
 #include <check.h>
 #include <regex.h>
@@ -293,13 +296,9 @@ START_TEST(test_panic) {
 END_TEST
 
 Suite *d_io_test_suite() {
-	Suite* suite;
-    TCase* test_case;
-
-    suite = suite_create("io tests");
-    test_case = tcase_create("d_io test case");
+	
+    TCase* test_case = tcase_create("d_io test case");
 	tcase_add_checked_fixture(test_case, io_tests_setup, io_tests_teardown);
-    suite_add_tcase(suite, test_case);
 
 	tcase_add_loop_test(test_case, test_log, 1, 7);
 	tcase_add_loop_test(test_case, test_log_explicit, 1, 7);
@@ -308,5 +307,7 @@ Suite *d_io_test_suite() {
 	tcase_add_test(test_case, test_panic);
 	tcase_add_test(test_case, test_pad_large_number);
 
+    Suite* suite = suite_create("io tests");
+	suite_add_tcase(suite, test_case);
 	return suite;
 }
